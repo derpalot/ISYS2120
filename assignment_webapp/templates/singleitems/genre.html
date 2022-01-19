@@ -1,0 +1,41 @@
+{% include 'top.html' %}
+<div class="content">
+    <div class="container details">
+        <!-- First check should be a valid instance -->
+        <!-- Second check should be what type of genre? -->
+        {% if media| length > 0 %}
+        <h2 class="title" align="center">{{genre_id}} genre</h2>
+        <div>
+            <table class="styled">
+                <thead>
+                    <tr>
+                        <td>Item ID</td>
+                        <td>Item Title</td>
+                        <td>Item Type</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for instance in media%}
+                        {% if instance.type == 'Song' %}
+                            <tr class="clickable-tr" data-href="{{ url_for('single_song',song_id=instance.item_id) }}">
+                        {% elif instance.type == 'Podcast' %}
+                            <tr class="clickable-tr" data-href="{{ url_for('single_podcast',podcast_id=instance.id) }}">
+                        {% elif instance.type == 'Movie' %}
+                            <tr class="clickable-tr" data-href="{{ url_for('single_movie',movie_id=instance.item_id) }}">
+                        {% elif instance.type == 'TV Show' %}
+                            <tr class="clickable-tr" data-href="{{ url_for('single_tvshow',tvshow_id=instance.id) }}">
+                        {% endif %}
+                                <td style= "text-align: center">{{instance.item_id}}</td>
+                                <td>{{instance.title}}</td>
+                                <td>{{instance.type}}</td>
+                            </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <h2 class="title"> Invalid Genre ID</h2>
+        {% endif %}
+    </div>
+</div>
+{% include 'bottom.html'%}

@@ -1,0 +1,109 @@
+{% include 'top.html' %}
+<div class="content">
+    <div class="container details">
+        <!-- Check if we have a valid podcast ep-->
+        {% if podcastep | length > 0 %}
+            <h2 class="title"> {{podcastep[0].podcast_episode_title}}, published on {{podcastep[0].podcast_episode_published_date}} with length: {{podcastep[0].podcast_episode_length}} </h2>
+            <hr/>
+            <h3> Artworks </h3>
+            {% for instance in podcastep %}
+                {% if instance.md_type_name == 'artwork' %}
+                    <img src="{{instance.md_value}}" alt="image" height=500 width =500>
+                    <br/>© Amazon Public Domain 2019. <br/>
+                    
+                {% endif %}
+            {% endfor %}
+            <br/>
+                <!-- Webplayer -->
+                <audio controls id="podcast_player" preload = "auto">
+                    <source src={{podcastep[0].podcast_episode_uri}} type="audio/ogg"/>
+                    <source src={{podcastep[0].podcast_episode_uri}} type="audio/mp3"/>
+                    <source src={{podcastep[0].podcast_episode_uri}} type="audio/acc"/>
+                    Your browser does not support the audio element.
+                </audio>
+                <!-- Resume from last view button-->
+                {% if progress > 0 and progress != 100%}
+                <form id="resume_button">
+                    <input type="button" value="Resume" onclick="resume()">
+                </form>
+                {% endif %}
+
+                <!-- Set the timestamp to previous play --
+                  -- and hide button after time is set-->
+                <script>
+                    var myAudio = document.getElementById('podcast_player');
+                    var playcount = 0;
+
+                    myAudio.addEventListener("ended", function () {
+                        playcount++;
+                    }, true);
+                    
+                    //set the timestamp to last play
+                    //and hide resume button after set
+                    function resume() {
+                        var audioLength = document.getElementById('podcast_player').duration;
+                        var time = Math.round(({{progress}}*audioLength)/100);
+                        myAudio.currentTime = time;
+                        myAudio.play();
+                        document.getElementById('resume_button').style.visibility = "hidden";
+                    };
+
+                    myAudio.onplaying = function () {
+                        document.getElementById('resume_button').style.visibility = "hidden";
+                    };
+
+                    //save info when the window is closed
+                    //window.onbeforeunload = function save() {
+                    window.onbeforeunload = function save() {
+                        var url = "/update_usermedia";
+                        var xhr = new XMLHttpRequest();
+                        xhr.open("POST", url, true);
+                        var media_id = '{{podcastep[0].media_id}}';
+                        xhr.setRequestHeader("Content-type","application/json");
+                        var today = new Date();
+                        var dd = String(today.getDate()).padStart(2, '0');
+                        var mm = String(today.getMonth() + 1).padStart(2, '0');
+                        var yyyy = today.getFullYear();
+                        today = yyyy+'-'+mm+'-'+dd;
+                        var audioLength = document.getElementById('podcast_player').duration;
+                        var new_progress = (myAudio.currentTime/audioLength)*100;
+                        var dict = JSON.stringify({
+                            'playcount': playcount,
+                            'progress': new_progress,
+                            'date': today,
+                            'media_id': media_id});
+                        xhr.send(dict);
+                    };
+                </script>
+            <hr/>
+            <!-- Display additional metadata details-->
+            <h3> Descriptions </h3>
+            {% for instance in podcastep %}
+                {% if instance.md_type_name == 'description' %}
+                    <div>
+                        {{instance.md_value}}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <br/>
+             <!-- 
+            modified the approach below slightly to make each genre clickable
+            -->
+            <h3> Genres </h3>
+            {% for instance in podcastep %}
+                {% if instance.md_type_name == 'podcast genre' %}
+                    <dl class="clickable-tr" data-href="{{url_for('single_genre', genre_id=instance.md_value)}}">
+                        <dt>{{instance.md_value}}</dt>
+                    </dl>
+                {% endif %}
+            {% endfor %}
+            <div>
+                <h2 class="subtitle"> Episode can be found below: </h2>
+                <div> {{podcastep[0].podcast_episode_uri}}</div>
+            </div>
+        {% else %}
+            <h2 class="title"> Invalid podcastep Ep ID</h2>
+        {% endif %}
+    </div>
+</div>
+{% include 'bottom.html'%}

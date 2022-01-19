@@ -1,0 +1,87 @@
+{% include 'top.html' %}
+<div class="content">
+    <div class="container details">
+        <!-- Check if we have a valid Movie -->
+        {% if movie | length > 0 %}
+            <h2 class="title"> {{movie[0].movie_title}} ({{movie[0].release_year}})</h2>
+            <hr/>
+            <h3> Artworks </h3>
+            {% for instance in movie %}
+                {% if instance.md_type_name == 'artwork' %}
+                    <img src="{{instance.md_value}}" alt="image">
+                    <br/>© Amazon Public Domain 2019.
+                {% endif %}
+            {% endfor %}
+            <br/>
+                <!-- Webplayer -->
+                <video controls id = "movie_player" preload = "auto">
+                    <source src={{movie[0].storage_location}} type="audio/ogg"/>
+                    <source src={{movie[0].storage_location}} type="audio/mp4"/>
+                    <source src={{movie[0].storage_location}} type="audio/webm"/>
+                    Your browser does not support the video element.
+                </video>
+                <!-- Resume from last play -->
+                {% if progress > 0 and progress != 100%}
+                <form id="resume_button">
+                    <input type="button" value="Resume" onclick="resume()">
+                </form>
+                {% endif %}
+                <!-- Set the timestamp to previous play --
+                  -- and hide button after time is set-->
+                <script>
+                    myAudio=document.getElementById('movie_player');
+                    myAudio.onloadedmetadata = function() {
+                        audioLength=document.getElementById('movie_player').duration;
+                        console.log(audioLength);
+                        time=Math.round(({{progress}}*audioLength)/100);
+                        if (myAudio.currentTime < time) {
+                            this.currentTime = time;
+                        };
+                    };
+                    myAudio.onplaying = function () {
+                        document.getElementById('resume_button').style.visibility = "hidden";
+                    };
+                    window.onbeforeunload = function save() {
+                        var url = "/update_usermedia";
+                        var xhr = new XMLHttpRequest();
+                        xhr.open("POST", url, true);
+                        var media_id = '{{movie[0].media_id}}';
+                        xhr.setRequestHeader("Content-type","application/json");
+                        var today = new Date();
+                        var dd = String(today.getDate()).padStart(2, '0');
+                        var mm = String(today.getMonth() + 1).padStart(2, '0');
+                        var yyyy = today.getFullYear();
+                        today = yyyy+'-'+mm+'-'+dd;
+                        var audioLength = document.getElementById('movie_player').duration;
+                        var new_progress = (myAudio.currentTime/audioLength)*100;
+                        var dict = JSON.stringify({
+                            'playcount': playcount,
+                            'progress': new_progress,
+                            'date': today,
+                            'media_id': media_id});
+                        xhr.send(dict);
+                    };
+                </script>
+            <h3> Descriptions </h3>
+            {% for instance in movie %}
+                {% if instance.md_type_name == 'description' %}
+                    <div>
+                        {{instance.md_value}}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <h3> Genres </h3>
+            {% for instance in movie %}
+                {% if instance.md_type_name == 'film genre' %}
+                    <dl class="clickable-tr" data-href="{{url_for('single_genre', genre_id=instance.md_value)}}">
+                        <dt>{{instance.md_value}}</dt>
+                    </dl>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <h2 class="title"> Invalid Movie ID</h2>
+        {% endif %}
+
+    </div>
+</div>
+{% include 'bottom.html'%}

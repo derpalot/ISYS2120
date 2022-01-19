@@ -1,0 +1,100 @@
+{% include 'top.html' %}
+<div class="content">
+    <div class="container details">
+        <!-- Check if we have a valid song -->
+        {% if song | length > 0 %}
+            <h2 class="title"> {{song[0].song_title}} by {{song[0].artists}}</h2>
+            <br/>
+            Song is {{song[0].length}} seconds long.
+            <hr/>
+            <h3> Artworks </h3>
+            {% for instance in songmetadata %}
+                {% if instance.md_type_name == 'artwork' %}
+                    <img src="{{instance.md_value}}" alt="image">
+                    <br/>© Spotify Public Domain 2019.
+                {% endif %}
+            {% endfor %}
+            <br/>
+                <!-- Webplayer -->
+                <audio controls id="music_player" preload ="auto" >
+                    <source src={{songmetadata[0].storage_location}} type="audio/ogg"/>
+                    <source src={{songmetadata[0].storage_location}} type="audio/mp3"/>
+                    <source src={{songmetadata[0].storage_location}} type="audio/acc"/>
+                    Your browser does not support the audio element.
+                </audio>
+                <!-- Resume from last view -->
+                {% if progress > 0 and progress != 100%}
+                <form id="resume_button">
+                    <input type="button" value="Resume" onclick="resume()">
+                </form>
+                {% endif %}
+
+                <script>
+                    var myAudio = document.getElementById('music_player');
+                    var playcount = 0;
+
+                    myAudio.addEventListener("ended", function () {
+                        playcount++;
+                    }, true);
+                    
+                    //set the timestamp to last play
+                    //and hide resume button after set
+                    function resume() {
+                        var audioLength = document.getElementById('music_player').duration;
+                        var time = Math.round(({{progress}}*audioLength)/100);
+                        myAudio.currentTime = time;
+                        myAudio.play();
+                        document.getElementById('resume_button').style.visibility = "hidden";
+                    };
+
+                    myAudio.onplaying = function () {
+                        document.getElementById('resume_button').style.visibility = "hidden";
+                    };
+
+                    //save info when the window is closed
+                    //window.onbeforeunload = function save()
+                    window.onbeforeunload = function save() {
+                        var url = "/update_usermedia";
+                        var xhr = new XMLHttpRequest();
+                        xhr.open("POST", url, true);
+                        var media_id = '{{songmetadata[0].media_id}}';
+                        xhr.setRequestHeader("Content-type","application/json");
+                        var today = new Date();
+                        var dd = String(today.getDate()).padStart(2, '0');
+                        var mm = String(today.getMonth() + 1).padStart(2, '0');
+                        var yyyy = today.getFullYear();
+                        today = yyyy+'-'+mm+'-'+dd;
+                        var audioLength = document.getElementById('music_player').duration;
+                        var new_progress = (myAudio.currentTime/audioLength)*100;
+                        var dict = JSON.stringify({
+                            'playcount': playcount,
+                            'progress': new_progress,
+                            'date': today,
+                            'media_id': media_id});
+                        xhr.send(dict);
+                    };
+                </script>
+            <h3> Descriptions </h3>
+            {% for instance in songmetadata %}
+                {% if instance.md_type_name == 'description' %}
+                    <div>
+                        {{instance.md_value}}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <br/>
+            <!-- Make each genre clickable -->
+            <h3> Genres </h3>
+            {% for instance in songmetadata %}
+                {% if instance.md_type_name == 'song genre' %}
+                    <dl class="clickable-tr" data-href="{{url_for('single_genre', genre_id=instance.md_value)}}">
+                        <dt>{{instance.md_value}}</dt>
+                    </dl>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <h2 class="title"> Invalid Song ID</h2>
+        {% endif %}
+    </div>
+</div>
+{% include 'bottom.html'%}

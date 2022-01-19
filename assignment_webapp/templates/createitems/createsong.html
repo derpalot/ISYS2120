@@ -1,0 +1,41 @@
+{% include 'top.html' %}
+<div class="content">
+    <div class="container details">
+        <h2 class="title"> Add Song </h2>
+        <form class="Add" method="POST" action="{{url_for('add_song')}}">
+            Song title: <input type="text" name="song_title" value="Empty Song" placeholder="Song name">
+            Song length: <input type="text" name="song_length" value="0" placeholder="Song length">
+            <br/>
+            Song location: <input type="text" name="storage_location" value="no location" placeholder="Storage location">
+            Description: <input type="text" name="description" value="no description" placeholder="Description">
+            <br/>
+            Song Genre: <input list="song_genre" name="songgenre" placeholder="pop">
+            <datalist id="song_genre">
+                {% for instance in genre %}
+                <option>
+                    {{instance.md_value}}
+                </option>
+                {% endfor %}
+            </datalist>
+            Artist: <input list="artist_name" name="artistname" placeholder="Unknown">
+            <datalist id="artist_name">
+            {% for instance in artist %}
+            <option>
+                {{instance.artist_name}}
+            </option>
+            {% endfor %}
+            </datalist>
+            Artwork: <input type="text" name="artwork" value="notfound.png" placeholder="notfound.png">
+            <br/>
+            <button class="flat" type="submit">Add</button>
+            <br/>
+            <hr/>
+            <hr/>
+            <hr/>
+
+        </form>
+        <br/>
+        <div>
+    </div>
+</div>
+{% include 'bottom.html'%}
